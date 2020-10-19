@@ -7,11 +7,14 @@
 
 import Foundation
 
-protocol Mappable {
+protocol FromMappable: Encodable {
+    associatedtype MappingKeys : CodingKey, Hashable
+}
+
+protocol ToMappable: Decodable {
     associatedtype MappingKeys : CodingKey
 }
 
-typealias FromMappable = Encodable & Mappable // need to also add requirement that mapping keys are hashable
-typealias ToMappable = Decodable & Mappable
+protocol Mappable: FromMappable, ToMappable {
 
-
+}

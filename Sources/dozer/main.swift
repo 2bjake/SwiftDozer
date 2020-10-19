@@ -14,7 +14,7 @@ struct Record {
     let zip: String?
 }
 
-extension Person: Codable, Mappable {
+extension Person: FromMappable {
     enum MappingKeys: CodingKey {
         case name
         case dob
@@ -23,7 +23,7 @@ extension Person: Codable, Mappable {
     }
 }
 
-extension Record: Codable, Mappable {
+extension Record: ToMappable {
     enum MappingKeys: CodingKey {
         case fullName
         case dateOfBirth
@@ -35,13 +35,12 @@ extension Record: Codable, Mappable {
 func convert() throws {
     let p = Person(name: "Tim Johnson", dob: Date(), city: "Austin", state: "Texas")
 
-    // I want to make the mapping a regular map... but... that means the fromkey has to be hashable...
-    var keyMapping = KeyMapping<Person, Record>()
-    keyMapping.addMapping(from: .name, to: .fullName)
-    keyMapping.addMapping(from: .dob, to: .dateOfBirth)
+    let t = ObjectTranslator<Person, Record>(keyMapping: [
+        .name: .fullName,
+        .dob: .dateOfBirth
+    ])
 
-    let r = try ObjectTranslator(keyMapping: keyMapping).translate(p)
-    print(r) // Record(fullName: "Tim Johnson", dateOfBirth: 2020-08-11 03:52:30 +0000)
+    print(try t.translate(p)) // Record(fullName: "Tim Johnson", dateOfBirth: 2020-08-11 03:52:30 +0000)
 }
 
 try convert()
