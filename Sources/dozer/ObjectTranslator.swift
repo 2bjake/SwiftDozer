@@ -25,37 +25,31 @@ struct HashableCodingKey<T>: Hashable {
 
 }
 
-struct SimpleObjectTranslator<From: Encodable, To: Decodable> {
-    private let encoder = JSONEncoder()
-    private let decoder = JSONDecoder()
+struct KeyMapping<FromType: Mappable, ToType: Mappable> {
+    typealias FromKey = FromType.MappingKeys
+    typealias ToKey = ToType.MappingKeys
 
-    init(_: To.Type) {}
-
-    func translate(_ from: From) throws -> To {
-        let data = try encoder.encode(from)
-        return try decoder.decode(To.self, from: data)
-    }
-}
-
-struct KeyMapping<FromKey: CodingKey, ToKey: CodingKey> {
     fileprivate var mapping: [(fromKey: FromKey, toKey: ToKey)]
 
     init(_ mapping: [(fromKey: FromKey, toKey: ToKey)] = []) {
         self.mapping = mapping
     }
 
-    mutating func map(_ from: FromKey, to: ToKey) {
+    mutating func addMapping(from: FromKey, to: ToKey) {
         mapping.append((from, to))
     }
 }
 
-struct ObjectTranslator<From: Encodable, FromKey: CodingKey, To: Decodable, ToKey: CodingKey> {
-    private typealias HashableFromKey = HashableCodingKey<From>
+struct ObjectTranslator<FromType: FromMappable, ToType: ToMappable> {
+    typealias FromKey = FromType.MappingKeys
+    typealias ToKey = ToType.MappingKeys
+
+    private typealias HashableFromKey = HashableCodingKey<FromType>
 
     private let keyMapping: [HashableFromKey : ToKey]
-    init(_: To.Type, with mapping: KeyMapping<FromKey, ToKey>) {
-        keyMapping = mapping.mapping.reduce(into: [:]) { result, element in
-            result[HashableCodingKey<From>(element.fromKey)] = element.toKey
+    init(keyMapping: KeyMapping<FromType, ToType>) {
+        self.keyMapping = keyMapping.mapping.reduce(into: [:]) { result, element in
+            result[HashableCodingKey<FromType>(element.fromKey)] = element.toKey
         }
     }
 
@@ -68,10 +62,10 @@ struct ObjectTranslator<From: Encodable, FromKey: CodingKey, To: Decodable, ToKe
         }
     }
 
-    func translate(_ from: From) throws -> To {
+    func translate(_ from: FromType) throws -> ToType {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .custom(keyEncodingStrategy)
         let data = try encoder.encode(from)
-        return try JSONDecoder().decode(To.self, from: data)
+        return try JSONDecoder().decode(ToType.self, from: data)
     }
 }
