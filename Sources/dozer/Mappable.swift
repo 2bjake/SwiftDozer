@@ -15,6 +15,4 @@ protocol ToMappable: Decodable {
     associatedtype MappingKeys : CodingKey
 }
 
-protocol Mappable: FromMappable, ToMappable {
-
-}
+typealias Mappable = FromMappable & ToMappable
